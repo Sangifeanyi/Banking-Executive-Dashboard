@@ -30,3 +30,20 @@ The solution includes:
 ## Project Status
 
 🚧 In Development
+## Project Structure
+
+```text
+database/
+documentation/
+powerbi/
+data/
+assets/
+```
+
+## Documentation
+
+- Business Requirements
+- Business Rules
+- ER Diagram
+- Data Dictionary
+- Architecture Diagram
