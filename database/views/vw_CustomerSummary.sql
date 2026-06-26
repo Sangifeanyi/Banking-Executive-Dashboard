@@ -1,7 +1,7 @@
 USE BankingDashboard;
 GO
 
-IF OBJECT_ID('dbo.vw_CustomerSummary','V') IS NOT NULL
+IF OBJECT_ID('dbo.vw_CustomerSummary', 'V') IS NOT NULL
     DROP VIEW dbo.vw_CustomerSummary;
 GO
 
@@ -12,57 +12,71 @@ SELECT
 
     c.CustomerID,
 
-    CONCAT(c.FirstName,' ',c.LastName) AS CustomerName,
+    CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName,
 
     c.Gender,
 
-    DATEDIFF(YEAR,c.DateOfBirth,GETDATE())
-      - CASE
-            WHEN DATEADD(YEAR,DATEDIFF(YEAR,c.DateOfBirth,GETDATE()),c.DateOfBirth) > GETDATE()
-            THEN 1
-            ELSE 0
-        END AS Age,
+    dbo.fn_CalculateAge(c.DateOfBirth) AS Age,
 
-    CASE
-
-        WHEN DATEDIFF(YEAR,c.DateOfBirth,GETDATE()) < 25 THEN '18-24'
-
-        WHEN DATEDIFF(YEAR,c.DateOfBirth,GETDATE()) < 35 THEN '25-34'
-
-        WHEN DATEDIFF(YEAR,c.DateOfBirth,GETDATE()) < 45 THEN '35-44'
-
-        WHEN DATEDIFF(YEAR,c.DateOfBirth,GETDATE()) < 55 THEN '45-54'
-
-        ELSE '55+'
-
-    END AS AgeGroup,
+    dbo.fn_AgeGroup
+    (
+        dbo.fn_CalculateAge(c.DateOfBirth)
+    ) AS AgeGroup,
 
     c.Occupation,
 
+    c.MonthlyIncome,
+
+    c.CustomerSince,
+
+    c.CustomerStatus,
+
+    b.BranchID,
+
+    b.BranchCode,
+
     b.BranchName,
 
-    COUNT(a.AccountID) AS TotalAccounts,
+    b.State,
 
-    SUM(ISNULL(a.Balance,0)) AS TotalBalance,
+    COUNT(DISTINCT a.AccountID) AS TotalAccounts,
 
-    AVG(ISNULL(a.Balance,0)) AS AverageBalance
+    ISNULL(SUM(a.Balance),0) AS TotalBalance,
 
-FROM Customers c
+    ISNULL(AVG(a.Balance),0) AS AverageBalance,
 
-LEFT JOIN Accounts a
-ON c.CustomerID = a.CustomerID
+    MAX(a.Balance) AS HighestAccountBalance,
 
-INNER JOIN Branches b
-ON c.BranchID = b.BranchID
+    MIN(a.Balance) AS LowestAccountBalance,
+
+    dbo.fn_RiskCategory
+    (
+        ISNULL(SUM(a.Balance),0)
+    ) AS CustomerTier
+
+FROM dbo.Customers c
+
+INNER JOIN dbo.Branches b
+    ON c.BranchID = b.BranchID
+
+LEFT JOIN dbo.Accounts a
+    ON c.CustomerID = a.CustomerID
 
 GROUP BY
 
-c.CustomerID,
-c.FirstName,
-c.LastName,
-c.Gender,
-c.DateOfBirth,
-c.Occupation,
-b.BranchName;
+    c.CustomerID,
+    c.FirstName,
+    c.LastName,
+    c.Gender,
+    c.DateOfBirth,
+    c.Occupation,
+    c.MonthlyIncome,
+    c.CustomerSince,
+    c.CustomerStatus,
+
+    b.BranchID,
+    b.BranchCode,
+    b.BranchName,
+    b.State;
 
 GO
